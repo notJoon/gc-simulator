@@ -1,4 +1,4 @@
-from typing import List, TypeVar
+from typing import List, TypeVar, Tuple
 
 T = TypeVar('T')
 
@@ -7,8 +7,8 @@ class PIController:
         self.gc: T = gc
         self.threshold = threshold
 
-    def check_gc(self, roots: List[any]) -> str:
+    def check_gc(self, roots: List[any]) -> Tuple[str, bool]:
         if len(self.gc.mem.objects) > self.threshold:
             self.gc.collect_garbage(roots)
-            return "Garbage collected"
-        return "GC not needed"
+            return "Garbage collected", True
+        return "GC not needed", False

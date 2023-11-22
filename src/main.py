@@ -30,12 +30,14 @@ if __name__ == "__main__":
         else:
             root.remove_reference(new_obj)
 
+        print("****")
         print(f"Objects: {mem.objects}")
-        print("*****")
         gced = pi.check_gc(roots)
-        print(gced)
-
-        print(f"Objects: {mem.objects}")
-        print("=====")
+        if gced[1]:
+            print("------")
+            print(gced[0])
+            print(f"result: {mem.objects}")
+        else:
+            print(gced[0])
 
     print("Done")
