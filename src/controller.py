@@ -11,3 +11,4 @@ class PIController:
         if len(self.gc.mem.objects) > self.threshold:
             self.gc.collect_garbage(roots)
             return "Garbage collected"
+        return "GC not needed"
