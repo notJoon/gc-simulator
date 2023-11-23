@@ -5,10 +5,12 @@ mod vm_tests {
         vm::{VMError, VMTrait, VM},
     };
 
+    static THRESHOLD: f64 = 0.75;
+
     #[test]
     fn test_new_vm() {
         let max_stack_size = 10;
-        let vm = VM::new(max_stack_size);
+        let vm = VM::new(max_stack_size, THRESHOLD).unwrap();
 
         assert_eq!(vm.max_stack_size, max_stack_size);
         assert_eq!(vm.stack, vec![]);
@@ -19,7 +21,7 @@ mod vm_tests {
     #[test]
     fn test_max_stack_size_exceed_max_int() {
         let max_stack_size = usize::MAX;
-        let vm = VM::new(max_stack_size);
+        let vm = VM::new(max_stack_size, THRESHOLD).unwrap();
 
         assert_eq!(vm.max_stack_size, max_stack_size);
         assert_eq!(vm.stack, vec![]);
@@ -29,7 +31,7 @@ mod vm_tests {
 
     #[test]
     fn test_push() {
-        let mut vm = VM::new(10);
+        let mut vm = VM::new(10, THRESHOLD).unwrap();
 
         let obj = vm.new_object(String::from("test"), TypeValue::Int(1));
         vm.push(obj).unwrap();
@@ -42,7 +44,7 @@ mod vm_tests {
 
     #[test]
     fn test_pop() {
-        let mut vm = VM::new(10);
+        let mut vm = VM::new(10, THRESHOLD).unwrap();
 
         let obj = vm.new_object(String::from("test"), TypeValue::Int(1));
         vm.push(obj).unwrap();
@@ -63,7 +65,7 @@ mod vm_tests {
 
     #[test]
     fn test_stack_overflow() {
-        let mut vm = VM::new(1);
+        let mut vm = VM::new(1, THRESHOLD).unwrap();
 
         let obj = vm.new_object(String::from("test"), TypeValue::Int(1));
         vm.push(obj).unwrap();
@@ -76,7 +78,7 @@ mod vm_tests {
 
     #[test]
     fn test_stack_underflow() {
-        let mut vm = VM::new(1);
+        let mut vm = VM::new(1, THRESHOLD).unwrap();
 
         let result = vm.pop();
         assert_eq!(result, Err(VMError::StackUnderflow));
@@ -84,7 +86,7 @@ mod vm_tests {
 
     #[test]
     fn test_new_object() {
-        let mut vm = VM::new(10);
+        let mut vm = VM::new(10, THRESHOLD).unwrap();
 
         let obj = vm.new_object(String::from("test"), TypeValue::Int(1));
         assert_eq!(vm.first_object, Some(obj));
@@ -97,7 +99,7 @@ mod vm_tests {
 
     #[test]
     fn test_push_int() {
-        let mut vm = VM::new(10);
+        let mut vm = VM::new(10, THRESHOLD).unwrap();
 
         let result = vm.push_int(1);
         assert_eq!(result, Ok(1));
@@ -107,4 +109,25 @@ mod vm_tests {
         assert_eq!(result, Ok(2));
         assert_eq!(vm.stack.len(), 2);
     }
+
+    // #[test]
+    // fn performance_test() {
+    //     let mut vm = VM::new(10, THRESHOLD).unwrap();
+
+    //     let mut i = 0;
+    //     while i < 1000000 {
+    //         let result = vm.push_int(i);
+    //         assert_eq!(result, Ok(i));
+    //         assert_eq!(vm.stack.len(), i as usize + 1);
+    //         i += 1;
+    //     }
+
+    //     let mut i = 0;
+    //     while i < 1000000 {
+    //         let result = vm.pop();
+    //         assert_eq!(result, Ok(vm.stack[i as usize]));
+    //         assert_eq!(vm.stack.len(), 1000000 - i as usize - 1);
+    //         i += 1;
+    //     }
+    // }
 }
