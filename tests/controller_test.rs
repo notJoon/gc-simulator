@@ -63,7 +63,10 @@ mod tests {
             min: -10.0,
             max: 10.0,
         });
-        assert_eq!(controller.update(5.0, 10.0, 0.0, 0.0), Err("`tt` or `ti` cannot be zero"));
+        assert_eq!(
+            controller.update(5.0, 10.0, 0.0, 0.0),
+            Err("`tt` or `ti` cannot be zero")
+        );
     }
 
     #[test]
