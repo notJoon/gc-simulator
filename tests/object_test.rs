@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod object_tests {
-    use gc_simulator::object::Object;
+    use gc_simulator::object::{Object, ObjectTrait};
     use gc_simulator::types::TriColor;
 
     #[test]
@@ -28,6 +28,16 @@ mod object_tests {
 
         object.delete_reference(object.reference[0].clone());
         assert_eq!(object.reference.len(), 0);
+    }
+
+    #[test]
+    fn test_is_empty() {
+        let mut object = Object::new(String::from("test"));
+        assert_eq!(object.is_empty(), true);
+
+        let object2 = Object::new(String::from("test2"));
+        object.add_reference(object2);
+        assert_eq!(object.is_empty(), false);
     }
 
     #[test]
