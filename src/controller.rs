@@ -1,5 +1,3 @@
-use std::cmp::Ordering;
-
 #[derive(Debug, PartialEq, Clone, Default)]
 pub struct PIController {
     pub cfg: PIConfig,
