@@ -1,11 +1,11 @@
 use core::fmt;
 
 use crate::{
-    controller::PIController,
-    object::{Object, ObjectTrait, TypeValue},
+    gc::TriColor,
+    object::{Object, TypeValue},
 };
 
-#[derive(Debug, PartialEq, Default)]
+#[derive(Debug, PartialEq, Default, Clone)]
 pub enum GCStatus {
     #[default]
     Idle,
@@ -20,16 +20,26 @@ pub enum VMError {
     InvalidRangeOfThreshold,
 }
 
-#[derive(Debug, PartialEq, Default)]
-pub struct VM {
-    pub stack: Vec<*mut Object>,
+#[derive(Debug, PartialEq, Clone, Default)]
+pub enum OpCode {
+    #[default]
+    Halt,
+    Pop,
+    Push(TypeValue),
+    Mark,
+    Sweep,
+}
+
+#[derive(Debug, PartialEq, Default, Clone)]
+pub struct VirtualMachine {
+    pub stack: Vec<Object>,
+    pub op_codes: Vec<OpCode>,
     pub max_stack_size: usize,
 
     pub threshold: usize,
     pub num_objects: usize,
-    pub first_object: Option<*mut Object>,
+    pub first_object: Option<Object>,
 
-    pi: PIController,
     pub gc_confidence: f64,
     pub trigger_gc: bool,
     pub gc_status: GCStatus,
@@ -39,16 +49,16 @@ pub trait VMTrait {
     fn new(max_stack_size: usize, threshold: f64) -> Result<Self, VMError>
     where
         Self: Sized;
-    fn push(&mut self, obj: *mut Object) -> Result<usize, VMError>;
-    fn pop(&mut self) -> Result<*mut Object, VMError>;
-    fn new_object(&mut self, ident: String, value: TypeValue) -> *mut Object;
-    fn push_int(&mut self, value: i32) -> Result<i32, VMError>;
+    fn push(&mut self, obj: Object) -> Result<usize, VMError>;
+    fn pop(&mut self) -> Result<Object, VMError>;
     fn len(&self) -> usize;
     fn is_empty(&self) -> bool;
-    fn update_gc_confidence(&mut self) -> f64;
+    fn to_string(&self) -> String;
+
+    fn mark(&mut self);
 }
 
-impl VMTrait for VM {
+impl VMTrait for VirtualMachine {
     fn new(max_stack_size: usize, threshold: f64) -> Result<Self, VMError> {
         if threshold <= 0.0 || threshold >= 100.0 {
             return Err(VMError::InvalidRangeOfThreshold);
@@ -61,38 +71,28 @@ impl VMTrait for VM {
         })
     }
 
-    fn push(&mut self, obj: *mut Object) -> Result<usize, VMError> {
+    fn push(&mut self, obj: Object) -> Result<usize, VMError> {
         if self.len() >= self.max_stack_size {
+            self.op_codes.push(OpCode::Halt);
             return Err(VMError::StackOverflow);
         }
 
-        self.stack.push(obj);
+        self.stack.push(obj.to_owned());
+        self.op_codes.push(OpCode::Push(obj.value.unwrap()));
+
         Ok(self.len())
     }
 
-    fn pop(&mut self) -> Result<*mut Object, VMError> {
+    fn pop(&mut self) -> Result<Object, VMError> {
         if self.is_empty() {
+            self.op_codes.push(OpCode::Halt);
             return Err(VMError::StackUnderflow);
         }
 
         let obj = self.stack.pop().unwrap();
+        self.op_codes.push(OpCode::Pop);
+
         Ok(obj)
-    }
-
-    fn new_object(&mut self, ident: String, value: TypeValue) -> *mut Object {
-        let obj = Box::new(Object::new(ident, value));
-        let obj_ptr = Box::into_raw(obj);
-
-        self.first_object = Some(obj_ptr);
-        self.num_objects += 1;
-
-        obj_ptr
-    }
-
-    fn push_int(&mut self, value: i32) -> Result<i32, VMError> {
-        let obj = self.new_object(String::from("int"), TypeValue::Int(value));
-        self.push(obj)?;
-        Ok(value)
     }
 
     fn len(&self) -> usize {
@@ -103,15 +103,54 @@ impl VMTrait for VM {
         self.stack.is_empty()
     }
 
-    fn update_gc_confidence(&mut self) -> f64 {
-        let current_metric = self.stack.len() as f64 / self.max_stack_size as f64 * 100.0;
-        let set_point = self.threshold as f64;
+    fn to_string(&self) -> String {
+        format!(
+            "VM: {{\nstack: {:?},\nop_codes: {:?},\nmax_stack_size: {},\nthreshold: {},\nnum_objects: {},\nfirst_object: {:?},\ngc_confidence: {},\ntrigger_gc: {},\ngc_status: {}\n}}",
+            self.stack,
+            self.op_codes,
+            self.max_stack_size,
+            self.threshold,
+            self.num_objects,
+            self.first_object,
+            self.gc_confidence,
+            self.trigger_gc,
+            self.gc_status
+        )
+    }
 
-        if let Ok(output) = self.pi.update(current_metric, set_point, 0.0, 0.0) {
-            self.gc_confidence = output;
+    fn mark(&mut self) {
+        self.op_codes.push(OpCode::Mark);
+        let mut mark_stack = Vec::new();
+
+        while let Some(mut obj) = self.stack.pop() {
+            if obj.marked == TriColor::White {
+                obj.marked = TriColor::Gray;
+                mark_stack.push(obj.clone());
+            }
+
+            if obj.reference.len() > 0 {
+                let mut ref_obj = obj.reference.pop().unwrap();
+                if ref_obj.marked == TriColor::White {
+                    ref_obj.marked = TriColor::Gray;
+                    mark_stack.push(ref_obj.clone());
+                }
+                obj.reference.push(ref_obj);
+            }
         }
 
-        self.gc_confidence
+        while let Some(mut obj) = mark_stack.pop() {
+            if obj.marked == TriColor::Gray {
+                obj.marked = TriColor::Black;
+            }
+
+            if obj.reference.len() > 0 {
+                let mut ref_obj = obj.reference.pop().unwrap();
+                if ref_obj.marked == TriColor::Gray {
+                    ref_obj.marked = TriColor::Black;
+                }
+                obj.reference.push(ref_obj);
+            }
+        }
     }
 }
 
@@ -134,6 +173,18 @@ impl fmt::Display for GCStatus {
             GCStatus::Idle => write!(f, "Idle"),
             GCStatus::Marking => write!(f, "Marking"),
             GCStatus::Sweeping => write!(f, "Sweeping"),
+        }
+    }
+}
+
+impl fmt::Display for OpCode {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match *self {
+            OpCode::Push(ref i) => write!(f, "Push: {}", i),
+            OpCode::Pop => write!(f, "Pop"),
+            OpCode::Halt => write!(f, "Halt"),
+            OpCode::Mark => write!(f, "Mark"),
+            OpCode::Sweep => write!(f, "Sweep"),
         }
     }
 }
