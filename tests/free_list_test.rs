@@ -86,7 +86,7 @@ mod free_list_tests {
     #[test]
     fn test_insert() {
         let mut fl = FreeList::new(vec![(8, 8)]);
-        
+
         fl.insert(8, 4);
         assert_eq!(fl.inner.len(), 1);
         assert_eq!(fl.inner.get(&8), Some(&8));

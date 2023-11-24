@@ -33,7 +33,7 @@ pub enum OpCode {
 #[derive(Debug, PartialEq, Default, Clone)]
 pub struct VirtualMachine {
     /// heap manages the runtime, which is a collection of memory regions.
-    /// 
+    ///
     /// The runtime uses this memory to hold heap blocks that it fills up with values
     /// in response to allocation requests
     pub heap: Vec<Object>,

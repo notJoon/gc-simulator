@@ -1,23 +1,21 @@
-use std::collections::{BTreeMap, btree_map};
+use std::collections::{btree_map, BTreeMap};
 
 #[derive(Debug, PartialEq, Clone, Default)]
 /// Free list is a data structure used in a dynamic memory allocator to keep track of which memory
 /// blocks are free and which are allocated.
 pub struct FreeList {
-    pub inner: BTreeMap<usize, usize>
+    pub inner: BTreeMap<usize, usize>,
 }
 
 pub struct FreeListIter<'a> {
-    inner_iter: btree_map::Iter<'a, usize, usize>
+    inner_iter: btree_map::Iter<'a, usize, usize>,
 }
 
 impl<'a> Iterator for FreeListIter<'a> {
     type Item = (usize, usize);
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.inner_iter
-            .next()
-            .map(|(k, v)| (*k, *v))
+        self.inner_iter.next().map(|(k, v)| (*k, *v))
     }
 }
 
@@ -28,10 +26,13 @@ impl FreeList {
     }
 
     pub fn insert(&mut self, start: usize, end: usize) {
-        if let Some(&len) = self.inner.get(&start) {
-            self.inner.insert(start, usize::max(len, end));
-        } else {
-            self.inner.insert(start, end);
+        match self.inner.get(&start) {
+            Some(&len) => {
+                self.inner.insert(start, usize::max(len, end));
+            }
+            None => {
+                self.inner.insert(start, end);
+            }
         }
 
         self.merge_adjacent_block();
@@ -42,35 +43,36 @@ impl FreeList {
     }
 
     pub fn merge_adjacent_block(&mut self) {
-        let mut current = self.inner
-            .keys()
-            .cloned()
-            .next();
+        let mut current = self.inner.keys().cloned().next();
 
-        while let Some(s) = current {
-            let len1 = *self.inner.get(&s).unwrap();
-            let end1 = s + len1;
+        // Iterates through 'self.inner' to merge adjacent or overlapping blocks
+        while let Some(start) = current {
+            let current_length = *self.inner.get(&start).unwrap();
+            let current_end = start + current_length;
 
-            if let Some((&s2, &len2)) = self.inner.range((s+1)..).next() {
-                if s2 <= end1 {
-                    // overlapping or adjacent blocks found
-                    // update the length of the current block
-                    *self.inner.get_mut(&s).unwrap() = len1 + len2 + s2 - end1;
-                    // remove the next block
-                    self.inner.remove(&s2);
+            // Find the next block that starts after 'start'
+            if let Some((&next_start, &next_length)) = self.inner.range((start + 1)..).next() {
+                // Check if the next block overlaps or is adjacent to the current block
+                if next_start <= current_end {
+                    // Calculate the new length for the merged block
+                    let new_length = current_length + next_length + next_start - current_end;
+                    // Update the current block's length to the new length
+                    *self.inner.get_mut(&start).unwrap() = new_length;
+                    // Remove the next block as it's now merged
+                    self.inner.remove(&next_start);
                 } else {
-                    current = Some(s2);
+                    // Move to the next block if there's no overlap
+                    current = Some(next_start);
                 }
             } else {
+                // Exit the loop if no more blocks are found
                 break;
             }
         }
     }
 
+    #[allow(clippy::unnecessary_to_owned)]
     pub fn to_vec(&self) -> Vec<(usize, usize)> {
-        self.inner
-            .to_owned()
-            .into_iter()
-            .collect()
+        self.inner.to_owned().into_iter().collect()
     }
 }

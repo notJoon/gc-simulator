@@ -1,5 +1,5 @@
 use core::fmt;
-use std::{default, collections::HashSet};
+use std::{collections::HashSet, default};
 
 use rand::Rng;
 
@@ -58,7 +58,9 @@ pub trait ObjectTrait {
     fn get_ident(&self) -> String;
     fn get_value(&self) -> Option<TypeValue>;
     fn is_marked(&self) -> bool;
+    /// Returns the size of the object (field size + header size) in bytes
     fn object_size(&self) -> usize;
+    /// Returns a randomly generated isolate object
     fn create_random_object() -> Self;
     fn to_string(&self) -> String;
 }
@@ -115,12 +117,12 @@ impl ObjectTrait for Object {
 
         let num_fields = rng.gen_range(0..10);
 
-        let fields: Vec<Field> = (0..num_fields).map(|_| {
-            match rng.gen_range(0..=1) {
+        let fields: Vec<Field> = (0..num_fields)
+            .map(|_| match rng.gen_range(0..=1) {
                 0 => Field::Ref(Address::NullPtr),
-                _ => Field::Value(TypeValue::Int(rng.gen_range(0..100)))
-            }
-        }).collect();
+                _ => Field::Value(TypeValue::Int(rng.gen_range(0..100))),
+            })
+            .collect();
 
         Self {
             ident: String::from("Random Object"),
@@ -158,10 +160,10 @@ impl default::Default for Object {
         Object {
             ident: String::from(""),
             value: None,
-            header: ObjectHeader { 
+            header: ObjectHeader {
                 size: std::mem::size_of::<Self>(),
                 next: None,
-                marked: TriColor::White
+                marked: TriColor::White,
             },
             addr: uuid::Uuid::new_v4().as_u128() as usize,
             references: HashSet::new(),

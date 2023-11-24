@@ -1,8 +1,8 @@
 #[cfg(test)]
 mod vm_tests {
     use gc_simulator::{
-        object::{TypeValue, Object, ObjectTrait},
-        vm::{VMError, VMTrait, VirtualMachine, OpCode},
+        object::{Object, ObjectTrait, TypeValue},
+        vm::{OpCode, VMError, VMTrait, VirtualMachine},
     };
 
     static THRESHOLD: f64 = 0.75;
@@ -34,15 +34,12 @@ mod vm_tests {
         let max_stack_size = 10;
         let mut vm = VirtualMachine::new(max_stack_size, THRESHOLD).unwrap();
 
-        for i in 0..max_stack_size-1 {
-            let value = Object::new(
-                String::from(format!("test{}", i)), 
-                TypeValue::Int(i as i32)
-            );
+        for i in 0..max_stack_size - 1 {
+            let value = Object::new(String::from(format!("test{}", i)), TypeValue::Int(i as i32));
             vm.push(value).unwrap();
         }
 
-        assert_eq!(vm.len(), max_stack_size-1);
+        assert_eq!(vm.len(), max_stack_size - 1);
     }
 
     #[test]
@@ -51,17 +48,14 @@ mod vm_tests {
         let mut vm = VirtualMachine::new(max_stack_size, THRESHOLD).unwrap();
 
         for i in 0..max_stack_size {
-            let value = Object::new(
-                String::from(format!("test{}", i)), 
-                TypeValue::Int(i as i32)
-            );
+            let value = Object::new(String::from(format!("test{}", i)), TypeValue::Int(i as i32));
             vm.push(value).unwrap();
         }
 
         assert_eq!(vm.len(), max_stack_size);
         assert_eq!(
-            vm.push(Object::new(String::from("test"), 
-            TypeValue::Int(1))).unwrap_err(), 
+            vm.push(Object::new(String::from("test"), TypeValue::Int(1)))
+                .unwrap_err(),
             VMError::StackOverflow
         );
     }
@@ -72,22 +66,16 @@ mod vm_tests {
         let mut vm = VirtualMachine::new(max_stack_size, THRESHOLD).unwrap();
 
         for i in 0..max_stack_size {
-            let value = Object::new(
-                String::from(format!("test{}", i)), 
-                TypeValue::Int(i as i32)
-            );
+            let value = Object::new(String::from(format!("test{}", i)), TypeValue::Int(i as i32));
             vm.push(value).unwrap();
-            assert_eq!(vm.len(), i+1);
-            assert_eq!(vm.num_objects, i+1);
+            assert_eq!(vm.len(), i + 1);
+            assert_eq!(vm.num_objects, i + 1);
         }
 
         assert_eq!(vm.len(), max_stack_size);
 
         for i in (0..max_stack_size).rev() {
-            let value = Object::new(
-                String::from(format!("test{}", i)), 
-                TypeValue::Int(i as i32)
-            );
+            let value = Object::new(String::from(format!("test{}", i)), TypeValue::Int(i as i32));
             assert_eq!(vm.pop().unwrap(), value);
         }
 
@@ -99,10 +87,7 @@ mod vm_tests {
         let max_stack_size = 10;
         let mut vm = VirtualMachine::new(max_stack_size, THRESHOLD).unwrap();
 
-        assert_eq!(
-            vm.pop().unwrap_err(), 
-            VMError::StackUnderflow
-        );
+        assert_eq!(vm.pop().unwrap_err(), VMError::StackUnderflow);
     }
 
     #[test]
@@ -110,10 +95,7 @@ mod vm_tests {
         let max_stack_size = 10;
         let mut vm = VirtualMachine::new(max_stack_size, THRESHOLD).unwrap();
 
-        let value = Object::new(
-            String::from("test"), 
-            TypeValue::Int(1)
-        );
+        let value = Object::new(String::from("test"), TypeValue::Int(1));
         vm.push(value).unwrap();
         vm.pop().unwrap();
 
@@ -127,16 +109,13 @@ mod vm_tests {
         let max_stack_size = 10;
         let mut vm = VirtualMachine::new(max_stack_size, THRESHOLD).unwrap();
 
-        let value = Object::new(
-            String::from("test"), 
-            TypeValue::Int(1)
-        );
+        let value = Object::new(String::from("test"), TypeValue::Int(1));
         vm.push(value).unwrap();
         vm.pop().unwrap();
         vm.pop().unwrap_err();
 
         assert_eq!(
-            vm.to_string(), 
+            vm.to_string(),
             "VM: {\nstack: [],\nop_codes: [Push(Int(1)), Pop, Halt],\nmax_stack_size: 10,\nthreshold: 7,\nnum_objects: 0,\nfirst_object: None,\ngc_confidence: 0,\ntrigger_gc: false,\ngc_status: Idle\n}");
     }
 }
