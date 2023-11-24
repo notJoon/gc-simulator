@@ -55,7 +55,7 @@ pub trait VMTrait {
     fn is_empty(&self) -> bool;
     fn to_string(&self) -> String;
 
-    fn mark(&mut self);
+    // fn mark(&mut self);
 }
 
 impl VMTrait for VirtualMachine {
@@ -79,6 +79,7 @@ impl VMTrait for VirtualMachine {
 
         self.stack.push(obj.to_owned());
         self.op_codes.push(OpCode::Push(obj.value.unwrap()));
+        self.first_object = Some(self.stack[0].to_owned());
 
         Ok(self.len())
     }
@@ -91,6 +92,7 @@ impl VMTrait for VirtualMachine {
 
         let obj = self.stack.pop().unwrap();
         self.op_codes.push(OpCode::Pop);
+        self.num_objects -= 1;
 
         Ok(obj)
     }
@@ -118,40 +120,40 @@ impl VMTrait for VirtualMachine {
         )
     }
 
-    fn mark(&mut self) {
-        self.op_codes.push(OpCode::Mark);
-        let mut mark_stack = Vec::new();
+    // fn mark(&mut self) {
+    //     self.op_codes.push(OpCode::Mark);
+    //     let mut mark_stack = Vec::new();
 
-        while let Some(mut obj) = self.stack.pop() {
-            if obj.marked == TriColor::White {
-                obj.marked = TriColor::Gray;
-                mark_stack.push(obj.clone());
-            }
+    //     while let Some(mut obj) = self.stack.pop() {
+    //         if obj.marked == TriColor::White {
+    //             obj.marked = TriColor::Gray;
+    //             mark_stack.push(obj.clone());
+    //         }
 
-            if obj.reference.len() > 0 {
-                let mut ref_obj = obj.reference.pop().unwrap();
-                if ref_obj.marked == TriColor::White {
-                    ref_obj.marked = TriColor::Gray;
-                    mark_stack.push(ref_obj.clone());
-                }
-                obj.reference.push(ref_obj);
-            }
-        }
+    //         if obj.reference.len() > 0 {
+    //             let mut ref_obj = obj.reference.pop().unwrap();
+    //             if ref_obj.marked == TriColor::White {
+    //                 ref_obj.marked = TriColor::Gray;
+    //                 mark_stack.push(ref_obj.clone());
+    //             }
+    //             obj.reference.push(ref_obj);
+    //         }
+    //     }
 
-        while let Some(mut obj) = mark_stack.pop() {
-            if obj.marked == TriColor::Gray {
-                obj.marked = TriColor::Black;
-            }
+    //     while let Some(mut obj) = mark_stack.pop() {
+    //         if obj.marked == TriColor::Gray {
+    //             obj.marked = TriColor::Black;
+    //         }
 
-            if obj.reference.len() > 0 {
-                let mut ref_obj = obj.reference.pop().unwrap();
-                if ref_obj.marked == TriColor::Gray {
-                    ref_obj.marked = TriColor::Black;
-                }
-                obj.reference.push(ref_obj);
-            }
-        }
-    }
+    //         if obj.reference.len() > 0 {
+    //             let mut ref_obj = obj.reference.pop().unwrap();
+    //             if ref_obj.marked == TriColor::Gray {
+    //                 ref_obj.marked = TriColor::Black;
+    //             }
+    //             obj.reference.push(ref_obj);
+    //         }
+    //     }
+    // }
 }
 
 impl fmt::Display for VMError {

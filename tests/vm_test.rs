@@ -77,6 +77,8 @@ mod vm_tests {
                 TypeValue::Int(i as i32)
             );
             vm.push(value).unwrap();
+            assert_eq!(vm.len(), i+1);
+            assert_eq!(vm.num_objects, i+1);
         }
 
         assert_eq!(vm.len(), max_stack_size);
