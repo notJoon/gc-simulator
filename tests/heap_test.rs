@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod heap_tests {
-    use gc_simulator::{heap::Heap, object::{Object, ObjectTrait, ObjectAddress, Field, TypeValue}};
+    use gc_simulator::{heap::Heap, object::{Object, ObjectTrait}};
 
     #[test]
     fn test_create_new_heap() {

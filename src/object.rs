@@ -180,15 +180,21 @@ impl default::Default for Object {
                 next: None,
                 marked: TriColor::White,
             },
-            addr: {
-                let counter = COUNTER.fetch_add(1, Ordering::SeqCst);
-                let uuid = Uuid::from_fields(0, 0, 0, &[1, 2, 3, 4, 5, 6, 7, 8]);
-                uuid.as_u128() as usize + counter + 3
-            },
+            addr: generate_sequential_UUID(),
             references: HashSet::new(),
             fields: vec![],
         }
     }
+}
+
+#[allow(non_snake_case)]
+/// Generates a sequential UUID for simulating memory addresses.
+/// 
+/// It is also possible to customize the address by using the `inject_address` method.
+fn generate_sequential_UUID() -> usize {
+    let counter = COUNTER.fetch_add(1, Ordering::SeqCst);
+    let uuid = Uuid::from_fields(0, 0, 0, &[1, 2, 3, 4, 5, 6, 7, 8]);
+    uuid.as_u128() as usize + counter + 3
 }
 
 impl fmt::Display for TypeValue {
