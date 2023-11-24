@@ -1,8 +1,11 @@
 use core::fmt;
 
-use crate::object::{Object, TypeValue};
+use crate::{
+    gc::TriColor,
+    object::{Object, TypeValue},
+};
 
-#[derive(Debug, PartialEq, Default)]
+#[derive(Debug, PartialEq, Default, Clone)]
 pub enum GCStatus {
     #[default]
     Idle,
@@ -23,10 +26,12 @@ pub enum OpCode {
     Halt,
     Pop,
     Push(TypeValue),
+    Mark,
+    Sweep,
 }
 
-#[derive(Debug, PartialEq, Default)]
-pub struct VM {
+#[derive(Debug, PartialEq, Default, Clone)]
+pub struct VirtualMachine {
     pub stack: Vec<Object>,
     pub op_codes: Vec<OpCode>,
     pub max_stack_size: usize,
@@ -49,9 +54,11 @@ pub trait VMTrait {
     fn len(&self) -> usize;
     fn is_empty(&self) -> bool;
     fn to_string(&self) -> String;
+
+    fn mark(&mut self);
 }
 
-impl VMTrait for VM {
+impl VMTrait for VirtualMachine {
     fn new(max_stack_size: usize, threshold: f64) -> Result<Self, VMError> {
         if threshold <= 0.0 || threshold >= 100.0 {
             return Err(VMError::InvalidRangeOfThreshold);
@@ -110,6 +117,41 @@ impl VMTrait for VM {
             self.gc_status
         )
     }
+
+    fn mark(&mut self) {
+        self.op_codes.push(OpCode::Mark);
+        let mut mark_stack = Vec::new();
+
+        while let Some(mut obj) = self.stack.pop() {
+            if obj.marked == TriColor::White {
+                obj.marked = TriColor::Gray;
+                mark_stack.push(obj.clone());
+            }
+
+            if obj.reference.len() > 0 {
+                let mut ref_obj = obj.reference.pop().unwrap();
+                if ref_obj.marked == TriColor::White {
+                    ref_obj.marked = TriColor::Gray;
+                    mark_stack.push(ref_obj.clone());
+                }
+                obj.reference.push(ref_obj);
+            }
+        }
+
+        while let Some(mut obj) = mark_stack.pop() {
+            if obj.marked == TriColor::Gray {
+                obj.marked = TriColor::Black;
+            }
+
+            if obj.reference.len() > 0 {
+                let mut ref_obj = obj.reference.pop().unwrap();
+                if ref_obj.marked == TriColor::Gray {
+                    ref_obj.marked = TriColor::Black;
+                }
+                obj.reference.push(ref_obj);
+            }
+        }
+    }
 }
 
 impl fmt::Display for VMError {
@@ -141,6 +183,8 @@ impl fmt::Display for OpCode {
             OpCode::Push(ref i) => write!(f, "Push: {}", i),
             OpCode::Pop => write!(f, "Pop"),
             OpCode::Halt => write!(f, "Halt"),
+            OpCode::Mark => write!(f, "Mark"),
+            OpCode::Sweep => write!(f, "Sweep"),
         }
     }
 }

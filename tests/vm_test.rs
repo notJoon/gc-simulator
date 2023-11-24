@@ -2,7 +2,7 @@
 mod vm_tests {
     use gc_simulator::{
         object::{TypeValue, Object, ObjectTrait},
-        vm::{VMError, VMTrait, VM, OpCode},
+        vm::{VMError, VMTrait, VirtualMachine, OpCode},
     };
 
     static THRESHOLD: f64 = 0.75;
@@ -10,7 +10,7 @@ mod vm_tests {
     #[test]
     fn test_new_vm() {
         let max_stack_size = 10;
-        let vm = VM::new(max_stack_size, THRESHOLD).unwrap();
+        let vm = VirtualMachine::new(max_stack_size, THRESHOLD).unwrap();
 
         assert_eq!(vm.max_stack_size, max_stack_size);
         assert_eq!(vm.stack, vec![]);
@@ -21,7 +21,7 @@ mod vm_tests {
     #[test]
     fn test_max_stack_size_exceed_max_int() {
         let max_stack_size = usize::MAX;
-        let vm = VM::new(max_stack_size, THRESHOLD).unwrap();
+        let vm = VirtualMachine::new(max_stack_size, THRESHOLD).unwrap();
 
         assert_eq!(vm.max_stack_size, max_stack_size);
         assert_eq!(vm.stack, vec![]);
@@ -32,7 +32,7 @@ mod vm_tests {
     #[test]
     fn test_push_objects_to_vm() {
         let max_stack_size = 10;
-        let mut vm = VM::new(max_stack_size, THRESHOLD).unwrap();
+        let mut vm = VirtualMachine::new(max_stack_size, THRESHOLD).unwrap();
 
         for i in 0..max_stack_size-1 {
             let value = Object::new(
@@ -48,7 +48,7 @@ mod vm_tests {
     #[test]
     fn test_stack_overflow() {
         let max_stack_size = 10;
-        let mut vm = VM::new(max_stack_size, THRESHOLD).unwrap();
+        let mut vm = VirtualMachine::new(max_stack_size, THRESHOLD).unwrap();
 
         for i in 0..max_stack_size {
             let value = Object::new(
@@ -69,7 +69,7 @@ mod vm_tests {
     #[test]
     fn test_pop() {
         let max_stack_size = 10;
-        let mut vm = VM::new(max_stack_size, THRESHOLD).unwrap();
+        let mut vm = VirtualMachine::new(max_stack_size, THRESHOLD).unwrap();
 
         for i in 0..max_stack_size {
             let value = Object::new(
@@ -95,7 +95,7 @@ mod vm_tests {
     #[test]
     fn stack_underflow() {
         let max_stack_size = 10;
-        let mut vm = VM::new(max_stack_size, THRESHOLD).unwrap();
+        let mut vm = VirtualMachine::new(max_stack_size, THRESHOLD).unwrap();
 
         assert_eq!(
             vm.pop().unwrap_err(), 
@@ -106,7 +106,7 @@ mod vm_tests {
     #[test]
     fn test_op_code() {
         let max_stack_size = 10;
-        let mut vm = VM::new(max_stack_size, THRESHOLD).unwrap();
+        let mut vm = VirtualMachine::new(max_stack_size, THRESHOLD).unwrap();
 
         let value = Object::new(
             String::from("test"), 
@@ -123,7 +123,7 @@ mod vm_tests {
     #[test]
     fn test_vm_debug_string() {
         let max_stack_size = 10;
-        let mut vm = VM::new(max_stack_size, THRESHOLD).unwrap();
+        let mut vm = VirtualMachine::new(max_stack_size, THRESHOLD).unwrap();
 
         let value = Object::new(
             String::from("test"), 

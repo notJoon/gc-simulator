@@ -1,7 +1,5 @@
 use core::fmt;
-use std::cell::RefCell;
 use std::default;
-use std::rc::Rc;
 
 use crate::gc::TriColor;
 
@@ -22,14 +20,14 @@ impl fmt::Display for TypeValue {
 pub struct Object {
     pub ident: String,
     pub value: Option<TypeValue>,
-    pub reference: Vec<Rc<RefCell<Object>>>,
+    pub reference: Vec<Object>,
     pub marked: TriColor,
 }
 
 pub trait ObjectTrait {
     fn new(ident: String, value: TypeValue) -> Self;
     fn add_reference(&mut self, object: Object) -> usize;
-    fn delete_reference(&mut self, object: Rc<RefCell<Object>>) -> usize;
+    fn delete_reference(&mut self, object: Object) -> usize;
     fn len(&self) -> usize;
     fn is_empty(&self) -> bool;
     fn to_string(&self) -> String;
@@ -47,12 +45,12 @@ impl ObjectTrait for Object {
     }
 
     fn add_reference(&mut self, object: Object) -> usize {
-        self.reference.push(Rc::new(RefCell::new(object)));
+        self.reference.push(object);
         self.reference.len()
     }
 
-    fn delete_reference(&mut self, object: Rc<RefCell<Object>>) -> usize {
-        self.reference.retain(|x| !Rc::ptr_eq(x, &object));
+    fn delete_reference(&mut self, object: Object) -> usize {
+        self.reference.retain(|x| x != &object);
         self.reference.len()
     }
 
@@ -87,11 +85,3 @@ impl default::Default for Object {
         }
     }
 }
-
-// pub trait ObjectMarker {
-//     fn mark_from_root(&self, vm: &mut VM) {
-//         for obj in &vm.stack {
-//             obj.co
-//         }
-//     }
-// }

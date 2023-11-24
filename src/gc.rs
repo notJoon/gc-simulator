@@ -1,11 +1,13 @@
 use std::fmt;
 
-use crate::{controller::PIController, vm::VM};
+use crate::{controller::PIController, vm::VirtualMachine};
 
 pub trait GarbageCollector {
-    fn collect(&self, vm: &mut VM);
+    fn collect(&self, vm: &mut VirtualMachine);
     fn ty(&self) -> GCType;
     fn new_instance(&self) -> Box<dyn GarbageCollector>;
+    fn adjust_confidence(&mut self, vm: &mut VirtualMachine);
+    fn trigger_gc(&mut self, vm: &mut VirtualMachine);
 }
 
 pub struct TriColorGC {
@@ -40,6 +42,6 @@ pub struct MarkAndSweep {
 
 // impl GarbageCollector for MarkAndSweep {
 //     fn collect(&self, vm: &mut VM) {
-        
+
 //     }
 // }
