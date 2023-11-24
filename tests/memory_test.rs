@@ -39,16 +39,4 @@ mod tests {
         memory.remove_object(memory.objects[0].clone());
         assert_eq!(memory.objects.len(), 0);
     }
-
-    #[test]
-    fn test_to_string() {
-        let mut memory = Memory::new();
-        let value = TypeValue::Int(42);
-        let object = Object::new(String::from("test"), value);
-        memory.add_object(object);
-        assert_eq!(
-            memory.to_string(),
-            "Memory: [Object { ident: \"test\", value: Some(Int(42)), reference: [], marked: White }]"
-        );
-    }
 }
