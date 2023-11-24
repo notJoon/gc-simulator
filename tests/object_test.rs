@@ -19,8 +19,29 @@ mod object_tests {
 
     #[test]
     fn test_create_random_object() {
-        let obj1 = Object::create_random_object();
+        let obj1 = Object::create_random_object(Some("obj1"));
         println!("{}", obj1.to_string());
-        println!("addr: {:?}", obj1.get_address());
+        println!("addr: {:?}\n", obj1.get_address());
+
+        println!("--------");
+
+        let obj2 = Object::create_random_object(Some("obj2"));
+        println!("{}", obj2.to_string());
+        println!("addr: {:?}\n", obj2.get_address());
+
+        println!("--------");
+
+        let obj3 = Object::create_random_object(Some("obj3"));
+        println!("{}", obj3.to_string());
+        println!("addr: {:?}\n", obj3.get_address());
+    }
+
+    #[test]
+    fn test_inject_address() {
+        let mut obj1 = Object::create_random_object(Some("obj1"));
+        let obj2 = Object::create_random_object(Some("obj2"));
+
+        obj1.inject_address(obj2.get_address());
+        assert_eq!(obj1.addr, obj2.get_address());
     }
 }

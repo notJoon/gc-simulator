@@ -1,11 +1,15 @@
 use core::fmt;
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::{collections::HashSet, default};
 
 use rand::Rng;
+use uuid::Uuid;
 
 use crate::gc::TriColor;
 
 pub type ObjectAddress = usize;
+
+static COUNTER: AtomicUsize = AtomicUsize::new(0);
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct Object {
@@ -61,8 +65,9 @@ pub trait ObjectTrait {
     /// Returns the size of the object (field size + header size) in bytes
     fn object_size(&self) -> usize;
     /// Returns a randomly generated isolate object
-    fn create_random_object() -> Self;
+    fn create_random_object(name: Option<&str>) -> Self;
     fn to_string(&self) -> String;
+    fn inject_address(&mut self, addr: ObjectAddress);
 }
 
 impl ObjectTrait for Object {
@@ -112,7 +117,12 @@ impl ObjectTrait for Object {
         self.header.marked != TriColor::White
     }
 
-    fn create_random_object() -> Self {
+    // testing purpose
+    fn create_random_object(name: Option<&str>) -> Self {
+        let ident = match name {
+            Some(name) => name.to_owned(),
+            None => String::from("Random Object"),
+        };
         let mut rng = rand::thread_rng();
 
         let num_fields = rng.gen_range(0..10);
@@ -125,7 +135,7 @@ impl ObjectTrait for Object {
             .collect();
 
         Self {
-            ident: String::from("Random Object"),
+            ident,
             fields,
             ..Default::default()
         }
@@ -140,6 +150,11 @@ impl ObjectTrait for Object {
         s.push_str(&format!("References: {:?}\n", self.references));
         s.push_str(&format!("Fields: {:?}\n", self.fields));
         s
+    }
+
+    // testing purpose
+    fn inject_address(&mut self, addr: ObjectAddress) {
+        self.addr = addr;
     }
 }
 
@@ -165,7 +180,11 @@ impl default::Default for Object {
                 next: None,
                 marked: TriColor::White,
             },
-            addr: uuid::Uuid::new_v4().as_u128() as usize,
+            addr: {
+                let counter = COUNTER.fetch_add(1, Ordering::SeqCst);
+                let uuid = Uuid::from_fields(0, 0, 0, &[1, 2, 3, 4, 5, 6, 7, 8]);
+                uuid.as_u128() as usize + counter + 3
+            },
             references: HashSet::new(),
             fields: vec![],
         }
