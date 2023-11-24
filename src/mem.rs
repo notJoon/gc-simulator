@@ -1,33 +1,25 @@
-use crate::object::Object;
-
-#[derive(Debug, Default, PartialEq)]
+#[derive(Debug, Default, PartialEq, Clone)]
 pub struct Memory {
-    pub objects: Vec<Object>,
+    pub status: Status,
 }
 
-pub trait MemoryTrait {
-    fn new() -> Self;
-    fn add_object(&mut self, obj: Object) -> usize;
-    fn remove_object(&mut self, obj: Object) -> usize;
-    fn to_string(&self) -> String;
+#[derive(Debug, PartialEq, Clone, Default)]
+pub enum Status {
+    #[default]
+    Free,
+    Allocated,
+    Marked,
+    Used,
 }
 
-impl MemoryTrait for Memory {
-    fn new() -> Self {
-        Default::default()
+impl Memory {
+    pub fn new(status: Status) -> Self {
+        Self { status }
     }
 
-    fn add_object(&mut self, obj: Object) -> usize {
-        self.objects.push(obj);
-        self.objects.len()
-    }
-
-    fn remove_object(&mut self, obj: Object) -> usize {
-        self.objects.retain(|x| x != &obj);
-        self.objects.len()
-    }
-
-    fn to_string(&self) -> String {
-        format!("Memory: {:?}", self.objects)
+    pub fn free() -> Self {
+        Self {
+            status: Status::Free,
+        }
     }
 }
