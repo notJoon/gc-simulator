@@ -1,7 +1,6 @@
 #[cfg(test)]
 mod object_tests {
-    use gc_simulator::object::{Object, ObjectTrait, TypeValue};
-    use gc_simulator::types::TriColor;
+    use gc_simulator::{object::{Object, ObjectTrait, TypeValue}, gc::TriColor};
 
     #[test]
     fn test_new() {

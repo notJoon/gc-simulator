@@ -1,8 +1,8 @@
 #[cfg(test)]
 mod vm_tests {
     use gc_simulator::{
-        object::TypeValue,
-        vm::{VMError, VMTrait, VM},
+        object::{TypeValue, Object, ObjectTrait},
+        vm::{VMError, VMTrait, VM, OpCode},
     };
 
     static THRESHOLD: f64 = 0.75;
@@ -30,104 +30,111 @@ mod vm_tests {
     }
 
     #[test]
-    fn test_push() {
-        let mut vm = VM::new(10, THRESHOLD).unwrap();
+    fn test_push_objects_to_vm() {
+        let max_stack_size = 10;
+        let mut vm = VM::new(max_stack_size, THRESHOLD).unwrap();
 
-        let obj = vm.new_object(String::from("test"), TypeValue::Int(1));
-        vm.push(obj).unwrap();
-        assert_eq!(vm.stack.len(), 1);
+        for i in 0..max_stack_size-1 {
+            let value = Object::new(
+                String::from(format!("test{}", i)), 
+                TypeValue::Int(i as i32)
+            );
+            vm.push(value).unwrap();
+        }
 
-        let obj2 = vm.new_object(String::from("test2"), TypeValue::Int(2));
-        vm.push(obj2).unwrap();
-        assert_eq!(vm.stack.len(), 2);
-    }
-
-    #[test]
-    fn test_pop() {
-        let mut vm = VM::new(10, THRESHOLD).unwrap();
-
-        let obj = vm.new_object(String::from("test"), TypeValue::Int(1));
-        vm.push(obj).unwrap();
-        assert_eq!(vm.stack.len(), 1);
-
-        let obj2 = vm.new_object(String::from("test2"), TypeValue::Int(2));
-        vm.push(obj2).unwrap();
-        assert_eq!(vm.stack.len(), 2);
-
-        let obj3 = vm.pop().unwrap();
-        assert_eq!(obj3, obj2);
-        assert_eq!(vm.stack.len(), 1);
-
-        let obj4 = vm.pop().unwrap();
-        assert_eq!(obj4, obj);
-        assert_eq!(vm.stack.is_empty(), true);
+        assert_eq!(vm.len(), max_stack_size-1);
     }
 
     #[test]
     fn test_stack_overflow() {
-        let mut vm = VM::new(1, THRESHOLD).unwrap();
+        let max_stack_size = 10;
+        let mut vm = VM::new(max_stack_size, THRESHOLD).unwrap();
 
-        let obj = vm.new_object(String::from("test"), TypeValue::Int(1));
-        vm.push(obj).unwrap();
-        assert_eq!(vm.stack.len(), 1);
+        for i in 0..max_stack_size {
+            let value = Object::new(
+                String::from(format!("test{}", i)), 
+                TypeValue::Int(i as i32)
+            );
+            vm.push(value).unwrap();
+        }
 
-        let obj2 = vm.new_object(String::from("test2"), TypeValue::Int(2));
-        let result = vm.push(obj2);
-        assert_eq!(result, Err(VMError::StackOverflow));
+        assert_eq!(vm.len(), max_stack_size);
+        assert_eq!(
+            vm.push(Object::new(String::from("test"), 
+            TypeValue::Int(1))).unwrap_err(), 
+            VMError::StackOverflow
+        );
     }
 
     #[test]
-    fn test_stack_underflow() {
-        let mut vm = VM::new(1, THRESHOLD).unwrap();
+    fn test_pop() {
+        let max_stack_size = 10;
+        let mut vm = VM::new(max_stack_size, THRESHOLD).unwrap();
 
-        let result = vm.pop();
-        assert_eq!(result, Err(VMError::StackUnderflow));
+        for i in 0..max_stack_size {
+            let value = Object::new(
+                String::from(format!("test{}", i)), 
+                TypeValue::Int(i as i32)
+            );
+            vm.push(value).unwrap();
+        }
+
+        assert_eq!(vm.len(), max_stack_size);
+
+        for i in (0..max_stack_size).rev() {
+            let value = Object::new(
+                String::from(format!("test{}", i)), 
+                TypeValue::Int(i as i32)
+            );
+            assert_eq!(vm.pop().unwrap(), value);
+        }
+
+        assert_eq!(vm.len(), 0);
     }
 
     #[test]
-    fn test_new_object() {
-        let mut vm = VM::new(10, THRESHOLD).unwrap();
+    fn stack_underflow() {
+        let max_stack_size = 10;
+        let mut vm = VM::new(max_stack_size, THRESHOLD).unwrap();
 
-        let obj = vm.new_object(String::from("test"), TypeValue::Int(1));
-        assert_eq!(vm.first_object, Some(obj));
-        assert_eq!(vm.num_objects, 1);
-
-        let obj2 = vm.new_object(String::from("test2"), TypeValue::Int(2));
-        assert_eq!(vm.first_object, Some(obj2));
-        assert_eq!(vm.num_objects, 2);
+        assert_eq!(
+            vm.pop().unwrap_err(), 
+            VMError::StackUnderflow
+        );
     }
 
     #[test]
-    fn test_push_int() {
-        let mut vm = VM::new(10, THRESHOLD).unwrap();
+    fn test_op_code() {
+        let max_stack_size = 10;
+        let mut vm = VM::new(max_stack_size, THRESHOLD).unwrap();
 
-        let result = vm.push_int(1);
-        assert_eq!(result, Ok(1));
-        assert_eq!(vm.stack.len(), 1);
+        let value = Object::new(
+            String::from("test"), 
+            TypeValue::Int(1)
+        );
+        vm.push(value).unwrap();
+        vm.pop().unwrap();
 
-        let result = vm.push_int(2);
-        assert_eq!(result, Ok(2));
-        assert_eq!(vm.stack.len(), 2);
+        assert_eq!(vm.op_codes.len(), 2);
+        assert_eq!(vm.op_codes[0], OpCode::Push(TypeValue::Int(1)));
+        assert_eq!(vm.op_codes[1], OpCode::Pop);
     }
 
-    // #[test]
-    // fn performance_test() {
-    //     let mut vm = VM::new(10, THRESHOLD).unwrap();
+    #[test]
+    fn test_vm_debug_string() {
+        let max_stack_size = 10;
+        let mut vm = VM::new(max_stack_size, THRESHOLD).unwrap();
 
-    //     let mut i = 0;
-    //     while i < 1000000 {
-    //         let result = vm.push_int(i);
-    //         assert_eq!(result, Ok(i));
-    //         assert_eq!(vm.stack.len(), i as usize + 1);
-    //         i += 1;
-    //     }
+        let value = Object::new(
+            String::from("test"), 
+            TypeValue::Int(1)
+        );
+        vm.push(value).unwrap();
+        vm.pop().unwrap();
+        vm.pop().unwrap_err();
 
-    //     let mut i = 0;
-    //     while i < 1000000 {
-    //         let result = vm.pop();
-    //         assert_eq!(result, Ok(vm.stack[i as usize]));
-    //         assert_eq!(vm.stack.len(), 1000000 - i as usize - 1);
-    //         i += 1;
-    //     }
-    // }
+        assert_eq!(
+            vm.to_string(), 
+            "VM: {\nstack: [],\nop_codes: [Push(Int(1)), Pop, Halt],\nmax_stack_size: 10,\nthreshold: 7,\nnum_objects: 0,\nfirst_object: None,\ngc_confidence: 0,\ntrigger_gc: false,\ngc_status: Idle\n}");
+    }
 }

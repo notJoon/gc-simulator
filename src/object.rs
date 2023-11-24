@@ -3,7 +3,7 @@ use std::cell::RefCell;
 use std::default;
 use std::rc::Rc;
 
-use crate::types::TriColor;
+use crate::gc::TriColor;
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum TypeValue {
@@ -87,3 +87,11 @@ impl default::Default for Object {
         }
     }
 }
+
+// pub trait ObjectMarker {
+//     fn mark_from_root(&self, vm: &mut VM) {
+//         for obj in &vm.stack {
+//             obj.co
+//         }
+//     }
+// }
