@@ -29,7 +29,7 @@ pub struct Object {
     pub fields: Vec<Field>,
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Default)]
 pub struct ObjectHeader {
     pub size: usize,
     pub next: Option<Address>,
@@ -65,7 +65,6 @@ pub trait ObjectTrait {
     fn is_marked(&self) -> bool;
     fn size(&self) -> usize;
     fn create_random_object(name: Option<&str>) -> Self;
-    fn to_string(&self) -> String;
     fn inject_address(&mut self, addr: ObjectAddress);
 }
 
@@ -140,17 +139,6 @@ impl ObjectTrait for Object {
         }
     }
 
-    fn to_string(&self) -> String {
-        let mut s = String::new();
-        s.push_str(&format!("Object: {}\n", self.ident));
-        s.push_str(&format!("Address: {:?}\n", self.addr));
-        s.push_str(&format!("Size: {} bytes\n", self.size()));
-        s.push_str(&format!("Marked: {:?}\n", self.header.marked));
-        s.push_str(&format!("References: {:?}\n", self.references));
-        s.push_str(&format!("Fields: {:?}\n", self.fields));
-        s
-    }
-
     // testing purpose
     fn inject_address(&mut self, addr: ObjectAddress) {
         self.addr = addr;
@@ -206,5 +194,18 @@ impl fmt::Display for TypeValue {
         match *self {
             TypeValue::Int(ref i) => write!(f, "Int: {}", i),
         }
+    }
+}
+
+impl fmt::Display for Object {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut s = String::new();
+        s.push_str(&format!("Object: {}\n", self.ident));
+        s.push_str(&format!("Address: {:?}\n", self.addr));
+        s.push_str(&format!("Size: {} bytes\n", self.size()));
+        s.push_str(&format!("Marked: {:?}\n", self.header.marked));
+        s.push_str(&format!("References: {:?}\n", self.references));
+        s.push_str(&format!("Fields: {:?}\n", self.fields));
+        write!(f, "{}", s)
     }
 }

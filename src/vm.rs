@@ -1,14 +1,10 @@
 use core::fmt;
 
-use crate::{object::{Object, TypeValue, ObjectAddress, ObjectTrait, Address, Field}, heap::Heap, gc::TriColor};
-
-#[derive(Debug, PartialEq, Default, Clone)]
-pub enum GCStatus {
-    #[default]
-    Idle,
-    Marking,
-    Sweeping,
-}
+use crate::{
+    gc::{GCStatus, GCType, GarbageCollector, TriColor},
+    heap::Heap,
+    object::{Address, Field, Object, ObjectAddress, ObjectTrait, TypeValue},
+};
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum VMError {
@@ -40,13 +36,16 @@ pub struct VirtualMachine {
     pub num_objects: usize,
     pub first_object: Option<Object>,
 
-    pub gc_confidence: f64,
-    pub trigger_gc: bool,
-    pub gc_status: GCStatus,
+    pub gc: GarbageCollector,
 }
 
 impl VirtualMachine {
-    pub fn new(max_stack_size: usize, threshold: f64, heap_size: usize, alignment: usize) -> Result<Self, VMError> {
+    pub fn new(
+        max_stack_size: usize,
+        threshold: f64,
+        heap_size: usize,
+        alignment: usize,
+    ) -> Result<Self, VMError> {
         if threshold <= 0.0 || threshold >= 100.0 {
             return Err(VMError::InvalidRangeOfThreshold);
         }
@@ -188,16 +187,13 @@ impl fmt::Display for VirtualMachine {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "VM: {{\nstack: {:?},\nop_codes: {:?},\nmax_stack_size: {},\nthreshold: {},\nnum_objects: {},\nfirst_object: {:?},\ngc_confidence: {},\ntrigger_gc: {},\ngc_status: {}\n}}",
+            "VM: {{\nstack: {:?},\nop_codes: {:?},\nmax_stack_size: {},\nthreshold: {},\nnum_objects: {},\nfirst_object: {:?}\n}}",
             self.stack,
             self.op_codes,
             self.max_stack_size,
             self.threshold,
             self.num_objects,
             self.first_object,
-            self.gc_confidence,
-            self.trigger_gc,
-            self.gc_status
         )
     }
 }

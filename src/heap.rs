@@ -6,7 +6,7 @@ use std::{
 use crate::{
     free_list::FreeList,
     mem::{self, Memory},
-    object::{Address, Field, Object, ObjectAddress, ObjectTrait},
+    object::{Address, Field, Object, ObjectAddress, ObjectTrait, ObjectHeader},
 };
 
 #[derive(Debug, PartialEq, Clone, Default)]
@@ -34,6 +34,42 @@ impl Heap {
             memory: vec![Memory::free(); size],
             alignment,
             ..Default::default()
+        }
+    }
+
+    pub fn allocate_object(&mut self, size: usize) -> Result<ObjectAddress, HeapError> {
+        let aligned_size = self.aligned_position(size);
+        let address = self.find_free_block(aligned_size)?;
+
+        let new_object = Object {
+            header: ObjectHeader {
+                size: aligned_size,
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+
+        // add object to the heap
+        self.objects.insert(address, new_object.to_owned());
+        self.free_list.remove(address);
+        self.update_memory_status(address, aligned_size, mem::Status::Allocated);
+
+        Ok(address)
+    }
+
+    fn find_free_block(&self, size: usize) -> Result<ObjectAddress, HeapError> {
+        self.free_list
+            .iter()
+            .find(|(_, len)| *len >= &size)
+            .map(|(addr, _)| *addr)
+            .ok_or(HeapError::OutOfMemory)
+    }
+
+    fn update_memory_status(&mut self, start: usize, size: usize, status: mem::Status) {
+        for offset in 0..size {
+            if let Some(cell) = self.memory.get_mut(start + offset) {
+                cell.status = status.to_owned();
+            }
         }
     }
 

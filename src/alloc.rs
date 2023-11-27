@@ -1,7 +1,12 @@
 use std::fmt::Debug;
 
-use crate::{object::{ObjectAddress, Object}, heap::Heap, free_list::{self, FreeList}, mem::{Memory, Status}};
 use crate::object::ObjectTrait;
+use crate::{
+    free_list::FreeList,
+    heap::Heap,
+    mem::{Memory, Status},
+    object::{Object, ObjectAddress},
+};
 
 #[derive(Debug, Default)]
 pub struct Allocator {}
@@ -15,7 +20,12 @@ impl Allocator {
         Default::default()
     }
 
-    pub fn allocate(&mut self, heap: &mut Heap, object: Object, is_root: bool) -> Result<ObjectAddress, AllocatorError> {
+    pub fn allocate(
+        &mut self,
+        heap: &mut Heap,
+        object: Object,
+        is_root: bool,
+    ) -> Result<ObjectAddress, AllocatorError> {
         let size = object.size();
 
         if let Some(alignment_start) = self.find_free_block(heap, size) {

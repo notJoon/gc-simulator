@@ -44,4 +44,13 @@ mod object_tests {
         obj1.inject_address(obj2.get_address());
         assert_eq!(obj1.addr, obj2.get_address());
     }
+
+    #[test]
+    fn test_update_object_color() {
+        let mut object = Object::create_random_object(Some("obj1"));
+        assert_eq!(object.header.marked, TriColor::White);
+
+        object.header.marked = TriColor::Gray;
+        assert_eq!(object.header.marked, TriColor::Gray);
+    }
 }

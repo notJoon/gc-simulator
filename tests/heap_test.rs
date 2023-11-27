@@ -2,7 +2,7 @@
 mod heap_tests {
     use gc_simulator::{
         heap::Heap,
-        object::{Object, ObjectTrait},
+        object::{Object, ObjectTrait}, gc::TriColor,
     };
 
     #[test]
@@ -111,5 +111,25 @@ mod heap_tests {
         for i in 0..10 {
             assert_eq!(h.aligned_position(i), i);
         }
+    }
+
+    #[test]
+    fn test_initialization_heap_color() {
+        let mut heap = Heap::new(1024, 0);
+        let addr1 = heap.allocate_object(64).unwrap();
+        let addr2 = heap.allocate_object(64).unwrap();
+
+        assert_eq!(heap.objects.get(&addr1).unwrap().header.marked, TriColor::White);
+        assert_eq!(heap.objects.get(&addr2).unwrap().header.marked, TriColor::White);
+
+        heap.objects.get_mut(&addr1).unwrap().header.marked = TriColor::Gray;
+        heap.objects.get_mut(&addr2).unwrap().header.marked = TriColor::Gray;
+
+        for obj in heap.objects.values() {
+            assert_eq!(obj.header.marked, TriColor::Gray);
+        }
+
+        assert_eq!(heap.objects.get(&addr1).unwrap().header.marked, TriColor::Gray);
+        assert_eq!(heap.objects.get(&addr2).unwrap().header.marked, TriColor::Gray);
     }
 }
