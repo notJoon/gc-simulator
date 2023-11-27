@@ -2,7 +2,7 @@
 mod heap_tests {
     use gc_simulator::{
         heap::Heap,
-        object::{Address, Field, Object, ObjectTrait},
+        object::{Object, ObjectTrait},
     };
 
     #[test]
@@ -46,6 +46,8 @@ mod heap_tests {
         let obj2 = Object::create_random_object(Some("o2"));
         h.objects.insert(obj2.get_address(), obj2.to_owned());
         assert_eq!(h.last_object(), Some(&obj2));
+
+        // println!("heap: {:?}", h);
     }
 
     #[test]

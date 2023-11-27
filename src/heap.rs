@@ -9,7 +9,7 @@ use crate::{
     object::{Address, Field, Object, ObjectAddress, ObjectTrait},
 };
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Default)]
 pub struct Heap {
     pub roots: BTreeSet<ObjectAddress>,
     pub objects: BTreeMap<ObjectAddress, Object>,
@@ -30,18 +30,17 @@ pub enum HeapError {
 impl Heap {
     pub fn new(size: usize, alignment: usize) -> Self {
         Self {
-            roots: BTreeSet::new(),
-            objects: BTreeMap::new(),
             free_list: FreeList::new(vec![(0, size)]),
             memory: vec![Memory::free(); size],
             alignment,
+            ..Default::default()
         }
     }
 
     /// Find `Object` in the heap based on the given address.
     pub fn lookup(&self, address: usize) -> Result<ObjectAddress, HeapError> {
         if let Some((_addr, obj)) = self.objects.iter().find(|(_, obj)| {
-            let obj_size = obj.object_size();
+            let obj_size = obj.size();
             address >= obj.get_address() && address < obj.get_address() + obj_size
         }) {
             let offset = address - obj.get_address();
@@ -72,7 +71,7 @@ impl Heap {
         let addr = obj.get_address();
 
         if let Some(o) = self.objects.get(&addr) {
-            let size = o.object_size();
+            let size = o.size();
 
             // Inserts a block into the free list,
             // merges adjacent blocks, and removes the block from the roots.
@@ -100,7 +99,7 @@ impl Heap {
             self.roots.insert(to);
         }
 
-        let obj_size = obj.object_size();
+        let obj_size = obj.size();
         self.objects.insert(to, obj);
         self.free_list.insert(from, obj_size);
         self.free_list.merge_adjacent_block();
@@ -149,7 +148,7 @@ impl Heap {
     /// Set all the memory cells to allocated.
     fn set_memory_cell_allocated(&mut self) -> Result<(), HeapError> {
         for (addr, obj) in &self.objects {
-            let size = obj.object_size();
+            let size = obj.size();
             for offset in 0..size {
                 match self.memory.get_mut(addr + offset) {
                     Some(cell) => cell.status = mem::Status::Allocated,

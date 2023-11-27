@@ -1,3 +1,4 @@
+pub mod alloc;
 pub mod controller;
 pub mod free_list;
 pub mod gc;
