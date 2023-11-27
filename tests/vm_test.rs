@@ -2,7 +2,7 @@
 mod vm_tests {
     use gc_simulator::{
         object::{Object, ObjectTrait, TypeValue},
-        vm::{OpCode, VMError, VMTrait, VirtualMachine},
+        vm::{OpCode, VMError, VirtualMachine},
     };
 
     static THRESHOLD: f64 = 0.75;
@@ -82,17 +82,31 @@ mod vm_tests {
         assert_eq!(vm.pop().unwrap_err(), VMError::StackUnderflow);
     }
 
-    // #[test]
-    // fn test_op_code() {
-    //     let max_stack_size = 10;
-    //     let mut vm = VirtualMachine::new(max_stack_size, THRESHOLD).unwrap();
+    #[test]
+    fn test_op_code() {
+        let max_stack_size = 10;
+        let mut vm = VirtualMachine::new(max_stack_size, THRESHOLD).unwrap();
 
-    //     let value = Object::new(String::from("test"), TypeValue::Int(1));
-    //     vm.push(value).unwrap();
-    //     vm.pop().unwrap();
+        let value = Object::new(String::from("test"), TypeValue::Int(1));
+        vm.push(value).unwrap();
+        vm.pop().unwrap();
 
-    //     assert_eq!(vm.op_codes.len(), 2);
-    //     assert_eq!(vm.op_codes[0], OpCode::Push(TypeValue::Int(1)));
-    //     assert_eq!(vm.op_codes[1], OpCode::Pop);
-    // }
+        assert_eq!(vm.op_codes.len(), 2);
+        assert_eq!(vm.op_codes[0], OpCode::Push(TypeValue::Int(1)));
+        assert_eq!(vm.op_codes[1], OpCode::Pop);
+    }
+
+    #[test]
+    fn test_get_first_object() {
+        let max_stack_size = 10;
+        let mut vm = VirtualMachine::new(max_stack_size, THRESHOLD).unwrap();
+
+        let value = Object::new(String::from("test"), TypeValue::Int(1));
+        vm.push(value.clone()).unwrap();
+
+        assert_eq!(vm.first_object, Some(value));
+
+        vm.pop().unwrap();
+        assert_eq!(vm.first_object, None);
+    }
 }

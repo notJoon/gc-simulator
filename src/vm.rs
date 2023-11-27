@@ -1,9 +1,6 @@
 use core::fmt;
 
-use crate::{
-    gc::TriColor,
-    object::{Object, TypeValue},
-};
+use crate::object::{Object, TypeValue};
 
 #[derive(Debug, PartialEq, Default, Clone)]
 pub enum GCStatus {
@@ -32,10 +29,6 @@ pub enum OpCode {
 
 #[derive(Debug, PartialEq, Default, Clone)]
 pub struct VirtualMachine {
-    /// heap manages the runtime, which is a collection of memory regions.
-    ///
-    /// The runtime uses this memory to hold heap blocks that it fills up with values
-    /// in response to allocation requests
     pub heap: Vec<Object>,
     pub stack: Vec<Object>,
     pub op_codes: Vec<OpCode>,
@@ -50,21 +43,8 @@ pub struct VirtualMachine {
     pub gc_status: GCStatus,
 }
 
-pub trait VMTrait {
-    fn new(max_stack_size: usize, threshold: f64) -> Result<Self, VMError>
-    where
-        Self: Sized;
-    fn push(&mut self, obj: Object) -> Result<usize, VMError>;
-    fn pop(&mut self) -> Result<Object, VMError>;
-    fn len(&self) -> usize;
-    fn is_empty(&self) -> bool;
-    fn to_string(&self) -> String;
-
-    // fn mark(&mut self);
-}
-
-impl VMTrait for VirtualMachine {
-    fn new(max_stack_size: usize, threshold: f64) -> Result<Self, VMError> {
+impl VirtualMachine {
+    pub fn new(max_stack_size: usize, threshold: f64) -> Result<Self, VMError> {
         if threshold <= 0.0 || threshold >= 100.0 {
             return Err(VMError::InvalidRangeOfThreshold);
         }
@@ -76,7 +56,7 @@ impl VMTrait for VirtualMachine {
         })
     }
 
-    fn push(&mut self, obj: Object) -> Result<usize, VMError> {
+    pub fn push(&mut self, obj: Object) -> Result<usize, VMError> {
         if self.len() >= self.max_stack_size {
             self.op_codes.push(OpCode::Halt);
             return Err(VMError::StackOverflow);
@@ -84,81 +64,48 @@ impl VMTrait for VirtualMachine {
 
         self.stack.push(obj.to_owned());
         self.op_codes.push(OpCode::Push(obj.value.unwrap()));
-        self.first_object = Some(self.stack[0].to_owned());
+        self.update_first_object();
+        self.update_num_object();
 
         Ok(self.len())
     }
 
-    fn pop(&mut self) -> Result<Object, VMError> {
+    pub fn pop(&mut self) -> Result<usize, VMError> {
         if self.is_empty() {
             self.op_codes.push(OpCode::Halt);
             return Err(VMError::StackUnderflow);
         }
 
-        let obj = self.stack.pop().unwrap();
+        let _obj = self.stack.pop().unwrap();
         self.op_codes.push(OpCode::Pop);
-        self.num_objects -= 1;
+        self.update_first_object();
+        self.update_num_object();
 
-        Ok(obj)
+        Ok(self.len())
     }
 
-    fn len(&self) -> usize {
+    pub fn len(&self) -> usize {
+        if self.is_empty() {
+            return 0;
+        }
+
         self.stack.len()
     }
 
-    fn is_empty(&self) -> bool {
+    pub fn is_empty(&self) -> bool {
         self.stack.is_empty()
     }
 
-    fn to_string(&self) -> String {
-        format!(
-            "VM: {{\nstack: {:?},\nop_codes: {:?},\nmax_stack_size: {},\nthreshold: {},\nnum_objects: {},\nfirst_object: {:?},\ngc_confidence: {},\ntrigger_gc: {},\ngc_status: {}\n}}",
-            self.stack,
-            self.op_codes,
-            self.max_stack_size,
-            self.threshold,
-            self.num_objects,
-            self.first_object,
-            self.gc_confidence,
-            self.trigger_gc,
-            self.gc_status
-        )
+    fn update_num_object(&mut self) -> usize {
+        self.num_objects = self.heap.len();
+        self.num_objects
     }
 
-    // fn mark(&mut self) {
-    //     self.op_codes.push(OpCode::Mark);
-    //     let mut mark_stack = Vec::new();
+    fn update_first_object(&mut self) -> bool {
+        self.first_object = self.stack.first().map(|obj| obj.to_owned());
 
-    //     while let Some(mut obj) = self.stack.pop() {
-    //         if obj.marked == TriColor::White {
-    //             obj.marked = TriColor::Gray;
-    //             mark_stack.push(obj.clone());
-    //         }
-
-    //         if obj.reference.len() > 0 {
-    //             let mut ref_obj = obj.reference.pop().unwrap();
-    //             if ref_obj.marked == TriColor::White {
-    //                 ref_obj.marked = TriColor::Gray;
-    //                 mark_stack.push(ref_obj.clone());
-    //             }
-    //             obj.reference.push(ref_obj);
-    //         }
-    //     }
-
-    //     while let Some(mut obj) = mark_stack.pop() {
-    //         if obj.marked == TriColor::Gray {
-    //             obj.marked = TriColor::Black;
-    //         }
-
-    //         if obj.reference.len() > 0 {
-    //             let mut ref_obj = obj.reference.pop().unwrap();
-    //             if ref_obj.marked == TriColor::Gray {
-    //                 ref_obj.marked = TriColor::Black;
-    //             }
-    //             obj.reference.push(ref_obj);
-    //         }
-    //     }
-    // }
+        self.first_object.is_some()
+    }
 }
 
 impl fmt::Display for VMError {
@@ -171,6 +118,24 @@ impl fmt::Display for VMError {
                 "Invalid range of threshold. Must be between 0.0 and 100.0"
             ),
         }
+    }
+}
+
+impl fmt::Display for VirtualMachine {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "VM: {{\nstack: {:?},\nop_codes: {:?},\nmax_stack_size: {},\nthreshold: {},\nnum_objects: {},\nfirst_object: {:?},\ngc_confidence: {},\ntrigger_gc: {},\ngc_status: {}\n}}",
+            self.stack,
+            self.op_codes,
+            self.max_stack_size,
+            self.threshold,
+            self.num_objects,
+            self.first_object,
+            self.gc_confidence,
+            self.trigger_gc,
+            self.gc_status
+        )
     }
 }
 

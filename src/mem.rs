@@ -22,4 +22,13 @@ impl Memory {
             status: Status::Free,
         }
     }
+
+    pub fn inspector(&self) -> String {
+        match self.status {
+            Status::Free => String::from("Free"),
+            Status::Allocated => String::from("Allocated"),
+            Status::Marked => String::from("Marked"),
+            Status::Used => String::from("Used"),
+        }
+    }
 }

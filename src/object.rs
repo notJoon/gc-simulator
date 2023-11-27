@@ -9,6 +9,7 @@ use crate::gc::TriColor;
 
 pub type ObjectAddress = usize;
 
+// Global counter for generating sequential UUIDs
 static COUNTER: AtomicUsize = AtomicUsize::new(0);
 
 #[derive(Debug, PartialEq, Clone)]
@@ -189,11 +190,16 @@ impl default::Default for Object {
 
 #[allow(non_snake_case)]
 /// Generates a sequential UUID for simulating memory addresses.
-/// 
+///
 /// It is also possible to customize the address by using the `inject_address` method.
 fn generate_sequential_UUID() -> usize {
     let counter = COUNTER.fetch_add(1, Ordering::SeqCst);
-    let uuid = Uuid::from_fields(0, 0, 0, &[1, 2, 3, 4, 5, 6, 7, 8]);
+    let uuid = Uuid::from_fields(
+        0xa1a2a3a4,
+        0xb1b2,
+        0xc1b2,
+        &[0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x42],
+    );
     uuid.as_u128() as usize + counter + 3
 }
 

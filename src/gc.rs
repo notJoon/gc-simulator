@@ -39,9 +39,3 @@ impl fmt::Display for TriColor {
 pub struct MarkAndSweep {
     pub pi: PIController,
 }
-
-// impl GarbageCollector for MarkAndSweep {
-//     fn collect(&self, vm: &mut VM) {
-
-//     }
-// }

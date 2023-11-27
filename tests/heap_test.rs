@@ -1,6 +1,9 @@
 #[cfg(test)]
 mod heap_tests {
-    use gc_simulator::{heap::Heap, object::{Object, ObjectTrait}};
+    use gc_simulator::{
+        heap::Heap,
+        object::{Address, Field, Object, ObjectTrait},
+    };
 
     #[test]
     fn test_create_new_heap() {
@@ -8,12 +11,6 @@ mod heap_tests {
         assert_eq!(heap.memory.len(), 100);
         assert_eq!(heap.calculate_free_memory(), 100);
         assert_eq!(heap.objects.is_empty(), true);
-    }
-
-    #[test]
-    #[ignore]
-    fn test_lookup() {
-        assert!(true);
     }
 
     #[test]
@@ -64,6 +61,7 @@ mod heap_tests {
         h.objects.insert(o2.get_address(), o2.to_owned());
         h.objects.insert(o3.get_address(), o3.to_owned());
 
+        // println!("heap: {:?}", h);
         assert_eq!(h.next_object(o1.get_address()), Some(&o2));
         assert_eq!(h.next_object(o2.get_address()), Some(&o3));
         assert_eq!(h.next_object(o3.get_address()), None);

@@ -6,7 +6,7 @@ use std::{
 use crate::{
     free_list::FreeList,
     mem::{self, Memory},
-    object::{Object, ObjectAddress, ObjectTrait, Field, Address},
+    object::{Address, Field, Object, ObjectAddress, ObjectTrait},
 };
 
 #[derive(Debug, PartialEq, Clone)]
@@ -119,9 +119,7 @@ impl Heap {
 
     /// Returns the address of the object that is next to the given address.
     pub fn next_object(&self, addr: usize) -> Option<&Object> {
-        self.objects
-            .values()
-            .find(|obj| obj.get_address() > addr)
+        self.objects.values().find(|obj| obj.get_address() > addr)
     }
 
     pub fn prev_object(&self, addr: usize) -> Option<&Object> {
