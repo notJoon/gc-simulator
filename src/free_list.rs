@@ -12,10 +12,10 @@ pub struct FreeListIter<'a> {
 }
 
 impl<'a> Iterator for FreeListIter<'a> {
-    type Item = (usize, usize);
+    type Item = (&'a usize, &'a usize);
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.inner_iter.next().map(|(k, v)| (*k, *v))
+        self.inner_iter.next()
     }
 }
 
@@ -25,13 +25,19 @@ impl FreeList {
         Self { inner }
     }
 
-    pub fn insert(&mut self, start: usize, end: usize) {
+    pub fn iter(&self) -> FreeListIter {
+        FreeListIter {
+            inner_iter: self.inner.iter(),
+        }
+    }
+
+    pub fn insert(&mut self, start: usize, size: usize) {
         match self.inner.get(&start) {
             Some(&len) => {
-                self.inner.insert(start, usize::max(len, end));
+                self.inner.insert(start, usize::max(size, len));
             }
             None => {
-                self.inner.insert(start, end);
+                self.inner.insert(start, size);
             }
         }
 

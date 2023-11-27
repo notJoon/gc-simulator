@@ -63,9 +63,7 @@ pub trait ObjectTrait {
     fn get_ident(&self) -> String;
     fn get_value(&self) -> Option<TypeValue>;
     fn is_marked(&self) -> bool;
-    /// Returns the size of the object (field size + header size) in bytes
-    fn object_size(&self) -> usize;
-    /// Returns a randomly generated isolate object
+    fn size(&self) -> usize;
     fn create_random_object(name: Option<&str>) -> Self;
     fn to_string(&self) -> String;
     fn inject_address(&mut self, addr: ObjectAddress);
@@ -106,7 +104,7 @@ impl ObjectTrait for Object {
         self.header.size
     }
 
-    fn object_size(&self) -> usize {
+    fn size(&self) -> usize {
         (self.fields.len() * 8) + self.header.size
     }
 
@@ -118,7 +116,7 @@ impl ObjectTrait for Object {
         self.header.marked != TriColor::White
     }
 
-    // testing purpose
+    /// testing purpose. Create a random object.
     fn create_random_object(name: Option<&str>) -> Self {
         let ident = match name {
             Some(name) => name.to_owned(),
@@ -146,7 +144,7 @@ impl ObjectTrait for Object {
         let mut s = String::new();
         s.push_str(&format!("Object: {}\n", self.ident));
         s.push_str(&format!("Address: {:?}\n", self.addr));
-        s.push_str(&format!("Size: {} bytes\n", self.object_size()));
+        s.push_str(&format!("Size: {} bytes\n", self.size()));
         s.push_str(&format!("Marked: {:?}\n", self.header.marked));
         s.push_str(&format!("References: {:?}\n", self.references));
         s.push_str(&format!("Fields: {:?}\n", self.fields));
