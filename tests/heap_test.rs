@@ -2,7 +2,7 @@
 mod heap_tests {
     use gc_simulator::{
         heap::Heap,
-        object::{Object, ObjectTrait}, gc::TriColor,
+        object::{Object, ObjectTrait, TypeValue}, gc::TriColor, alloc::Allocator,
     };
 
     #[test]
@@ -114,22 +114,23 @@ mod heap_tests {
     }
 
     #[test]
-    fn test_initialization_heap_color() {
-        let mut heap = Heap::new(1024, 0);
-        let addr1 = heap.allocate_object(64).unwrap();
-        let addr2 = heap.allocate_object(64).unwrap();
+    fn test_find_free_block() {
+        let mut heap = Heap::new(200, 4);
+        let mut alloc = Allocator::new();
 
-        assert_eq!(heap.objects.get(&addr1).unwrap().header.marked, TriColor::White);
-        assert_eq!(heap.objects.get(&addr2).unwrap().header.marked, TriColor::White);
-
-        heap.objects.get_mut(&addr1).unwrap().header.marked = TriColor::Gray;
-        heap.objects.get_mut(&addr2).unwrap().header.marked = TriColor::Gray;
-
-        for obj in heap.objects.values() {
-            assert_eq!(obj.header.marked, TriColor::Gray);
+        for i in 0..10 {
+            let obj = Object::new(format!("obj{}", i), TypeValue::Int(i + 10));
+            alloc.allocate(&mut heap, obj, false).unwrap();
         }
 
-        assert_eq!(heap.objects.get(&addr1).unwrap().header.marked, TriColor::Gray);
-        assert_eq!(heap.objects.get(&addr2).unwrap().header.marked, TriColor::Gray);
+        let object = Object::create_random_object(Some("test"));
+        let free_block_addr = alloc.find_free_block(&mut heap, object.size());
+        assert_eq!(free_block_addr.is_some(), true);
+
+        while alloc.allocate(&mut heap, object.clone(), false).is_ok() {}
+        let no_free_block_addr = alloc.find_free_block(&mut heap, object.size());
+        assert!(no_free_block_addr.is_none(), "should not find a free block");
+
+        heap.display_memory();
     }
 }

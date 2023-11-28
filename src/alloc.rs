@@ -34,6 +34,13 @@ impl Allocator {
                 heap.roots.insert(alignment_start);
             }
 
+            // Update memory status
+            for i in alignment_start..alignment_start + size {
+                if let Some(memory_block) = heap.memory.get_mut(i) {
+                    memory_block.status = Status::Allocated;
+                }
+            }
+
             return Ok(alignment_start);
         }
 

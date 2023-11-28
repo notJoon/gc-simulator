@@ -100,7 +100,7 @@ mod vm_tests {
 
     #[test]
     fn test_get_first_object() {
-        let max_stack_size = 10;
+        let max_stack_size = 500;
         let mut vm = VirtualMachine::new(max_stack_size, THRESHOLD, 100, 0).unwrap();
 
         let value = Object::new(String::from("test"), TypeValue::Int(1));

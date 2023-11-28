@@ -1,3 +1,4 @@
+use core::fmt;
 use std::{
     collections::{BTreeMap, BTreeSet},
     fmt::Debug,
@@ -5,7 +6,7 @@ use std::{
 
 use crate::{
     free_list::FreeList,
-    mem::{self, Memory},
+    mem::{self, Memory, Status},
     object::{Address, Field, Object, ObjectAddress, ObjectTrait, ObjectHeader},
 };
 
@@ -57,7 +58,7 @@ impl Heap {
         Ok(address)
     }
 
-    fn find_free_block(&self, size: usize) -> Result<ObjectAddress, HeapError> {
+    pub fn find_free_block(&self, size: usize) -> Result<ObjectAddress, HeapError> {
         self.free_list
             .iter()
             .find(|(_, len)| *len >= &size)
@@ -194,6 +195,20 @@ impl Heap {
         }
 
         Ok(())
+    }
+
+    pub fn display_memory(&self) {
+        let mut display_string = String::new();
+
+        for memory_block in &self.memory {
+            display_string.push(match memory_block.status {
+                Status::Allocated => 'X',
+                Status::Free => '.',
+                _ => '?',
+            });
+        }
+
+        println!("Heap Memory: {}", display_string);
     }
 }
 

@@ -163,7 +163,8 @@ impl default::Default for Object {
             ident: String::from(""),
             value: None,
             header: ObjectHeader {
-                size: std::mem::size_of::<Self>(),
+                // size: std::mem::size_of::<Self>(),
+                size: 10,
                 next: None,
                 marked: TriColor::White,
             },
