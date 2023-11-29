@@ -1,9 +1,10 @@
-use std::fmt;
+use std::{collections::BTreeSet, fmt};
 
 use crate::{
     controller::{PIConfig, PIController},
+    heap::Heap,
     object::{ObjectAddress, ObjectTrait},
-    vm::{OpCode, VirtualMachine},
+    vm::VirtualMachine,
 };
 
 pub struct TriColorGC {
@@ -52,47 +53,60 @@ impl GarbageCollector {
             obj.header.marked = new_color;
         }
     }
-}
 
-pub trait Marker {
-    fn mark_from_roots(&self, vm: &mut VirtualMachine) -> Option<bool> {
-        vm.init_object();
-        vm.process_roots();
+    pub fn start_gc(&mut self, heap: &mut Heap) -> Option<bool> {
+        for object in heap.objects.values_mut() {
+            object.header.marked = TriColor::White;
+        }
+
+        self.mark_roots(heap);
+        self.mark_phase(heap);
 
         Some(true)
     }
 
-    fn mark(&self, addr: ObjectAddress, vm: &mut VirtualMachine) {
-        let mut grays = vec![];
-        grays.push(addr);
-
-        while let Some(curr_addr) = grays.pop() {
-            if vm.process_object(curr_addr, &mut grays) {
-                vm.op_codes.push(OpCode::Mark(
-                    curr_addr,
-                    vm.heap.objects.get(&curr_addr).unwrap().size(),
-                ));
-                continue;
+    /// mark_roots mark root object as gray
+    pub fn mark_roots(&mut self, heap: &mut Heap) -> bool {
+        for addr in heap.roots.iter() {
+            if let Some(obj) = heap.objects.get_mut(addr) {
+                obj.header.marked = TriColor::Gray;
             }
         }
+
+        true
     }
 
-    fn sweep(&self, vm: &mut VirtualMachine) {
-        let mut sweeped = 0;
-        let mut freed = 0;
+    // Steps to Implement Mark phase:
+    // 1. Iterate Over Gray Objects: Continue processing objects as long as there are
+    //   gray objects in the list (here: `grays`).
+    //
+    // 2. Mark Objects Black: When an object is processed, mark it black to indicate
+    //   that it has been visited.
+    //
+    // 3. Mark Referenced Objects Gray: For each object processed, examine its fields
+    //   for references to other objects. It a reference object is *White*, mark it gray and add it to the
+    //   list of gray objects to be processed.
+    //
+    // 4. Handle Circular References: Avoid re-adding black objects to the list of gray objects.
+    pub fn mark_phase(&self, heap: &mut Heap) -> Option<BTreeSet<usize>> {
+        let mut grays = heap.roots.clone();
 
-        for (addr, obj) in vm.heap.objects.iter_mut() {
-            if obj.header.marked == TriColor::Black {
-                obj.header.marked = TriColor::White;
-                vm.op_codes.push(OpCode::Sweep);
-                sweeped += 1;
-            } else {
-                freed += 1;
-                vm.heap.free_list.insert(*addr, obj.size());
+        while let Some(addr) = grays.iter().next().cloned() {
+            if let Some(obj) = heap.objects.get_mut(&addr) {
+                obj.header.marked = TriColor::Black;
+
+                for ref_addr in obj.get_references() {
+                    if let Some(ref_obj) = heap.objects.get_mut(&ref_addr) {
+                        if ref_obj.header.marked == TriColor::White {
+                            ref_obj.header.marked = TriColor::Gray;
+                            grays.insert(ref_addr);
+                        }
+                    }
+                }
             }
         }
 
-        println!("Sweeped: {}, Freed: {}", sweeped, freed);
+        Some(grays)
     }
 }
 

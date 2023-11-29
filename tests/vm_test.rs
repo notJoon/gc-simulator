@@ -111,5 +111,4 @@ mod vm_tests {
         vm.pop().unwrap();
         assert_eq!(vm.first_object, None);
     }
-
 }

@@ -1,4 +1,3 @@
-use core::fmt;
 use std::{
     collections::{BTreeMap, BTreeSet},
     fmt::Debug,
@@ -7,7 +6,7 @@ use std::{
 use crate::{
     free_list::FreeList,
     mem::{self, Memory, Status},
-    object::{Address, Field, Object, ObjectAddress, ObjectTrait, ObjectHeader},
+    object::{Address, Field, Object, ObjectAddress, ObjectHeader, ObjectTrait},
 };
 
 #[derive(Debug, PartialEq, Clone, Default)]
@@ -51,7 +50,7 @@ impl Heap {
         };
 
         // add object to the heap
-        self.objects.insert(address, new_object.to_owned());
+        self.objects.insert(address, new_object);
         self.free_list.remove(address);
         self.update_memory_status(address, aligned_size, mem::Status::Allocated);
 

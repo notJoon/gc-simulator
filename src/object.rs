@@ -66,6 +66,7 @@ pub trait ObjectTrait {
     fn size(&self) -> usize;
     fn create_random_object(name: Option<&str>) -> Self;
     fn inject_address(&mut self, addr: ObjectAddress);
+    fn get_references(&self) -> HashSet<ObjectAddress>;
 }
 
 impl ObjectTrait for Object {
@@ -87,6 +88,23 @@ impl ObjectTrait for Object {
 
     fn get_address(&self) -> ObjectAddress {
         self.addr
+    }
+
+    fn get_references(&self) -> HashSet<ObjectAddress> {
+        let mut reference_addrs = HashSet::new();
+
+        // add direct references from the `references` field
+        for &addr in self.references.iter() {
+            reference_addrs.insert(addr);
+        }
+
+        for field in self.fields.iter() {
+            if let Field::Ref(Address::Ptr(addr)) = field {
+                reference_addrs.insert(*addr);
+            }
+        }
+
+        reference_addrs
     }
 
     fn add_reference(&mut self, obj: Object) -> usize {

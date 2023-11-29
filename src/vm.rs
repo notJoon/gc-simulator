@@ -1,7 +1,7 @@
 use core::fmt;
 
 use crate::{
-    gc::{GCStatus, GCType, GarbageCollector, TriColor},
+    gc::{GCStatus, GarbageCollector, TriColor},
     heap::Heap,
     object::{Address, Field, Object, ObjectAddress, ObjectTrait, TypeValue},
 };

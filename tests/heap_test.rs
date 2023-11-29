@@ -1,8 +1,9 @@
 #[cfg(test)]
 mod heap_tests {
     use gc_simulator::{
+        alloc::Allocator,
         heap::Heap,
-        object::{Object, ObjectTrait, TypeValue}, gc::TriColor, alloc::Allocator,
+        object::{Object, ObjectTrait, TypeValue},
     };
 
     #[test]
