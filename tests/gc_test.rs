@@ -6,7 +6,7 @@ mod marker_tests {
     };
 
     fn vm_setup() -> VirtualMachine {
-        VirtualMachine::new(10, 0.5, 100, 8).unwrap()
+        VirtualMachine::new(150, 0.5, 100, 8).unwrap()
     }
 
     fn gc_setup() -> GarbageCollector {
@@ -17,6 +17,11 @@ mod marker_tests {
     fn test_initialization_of_objects() {
         let mut vm = vm_setup();
         let mut gc = gc_setup();
+
+        for i in 0..10 {
+            let obj = Object::create_random_object(Some(&format!("obj{}", i)));
+            vm.heap.objects.insert(i, obj);
+        }
 
         assert_eq!(
             vm.heap
@@ -104,11 +109,13 @@ mod marker_tests {
         let mut heap = Heap::new(100, 0);
         let gc = gc_setup();
 
-        let obj1 = Object::create_random_object(Some("obj1"));
+        let mut obj1 = Object::create_random_object(Some("obj1"));
         let obj2 = Object::create_random_object(Some("obj2"));
+        
+        obj1.add_reference(obj2.clone());
 
+        heap.roots.insert(1);
         heap.objects.insert(1, obj1);
-        heap.objects.insert(2, obj2);
 
         let result = gc.mark_phase(&mut heap);
 

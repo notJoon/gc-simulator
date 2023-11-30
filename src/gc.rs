@@ -55,6 +55,8 @@ impl GarbageCollector {
     }
 
     pub fn start_gc(&mut self, heap: &mut Heap) -> Option<bool> {
+        self.gc_status = GCStatus::Marking;
+
         for object in heap.objects.values_mut() {
             object.header.marked = TriColor::White;
         }
@@ -97,9 +99,14 @@ impl GarbageCollector {
 
                 for ref_addr in obj.get_references() {
                     if let Some(ref_obj) = heap.objects.get_mut(&ref_addr) {
-                        if ref_obj.header.marked == TriColor::White {
-                            ref_obj.header.marked = TriColor::Gray;
-                            grays.insert(ref_addr);
+                        match ref_obj.header.marked {
+                            TriColor::White => {
+                                ref_obj.header.marked = TriColor::Gray;
+                                grays.insert(ref_addr);
+                            }
+                            TriColor::Gray | TriColor::Black => {
+                                // do nothing
+                            }
                         }
                     }
                 }
